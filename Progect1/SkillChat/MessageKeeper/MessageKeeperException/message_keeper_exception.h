@@ -6,6 +6,7 @@
 #include "../../Exception/chat_exception.h"
 
 class MessageKeeperException :public ChatException{
-
+public:
+    MessageKeeperException(const string& error_text): ChatException(string("from MessageKeeper ") + error_text){}
 };
 

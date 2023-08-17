@@ -1,24 +1,29 @@
 #include <iostream>
+#include <chrono>
 #include "sqlite3.h"
 
 #include "sqlite3.h"
+#include "MessageKeeper/SqlLite/sql_lite_message_keeper.h"
 
-const char* SQL = "CREATE TABLE IF NOT EXISTS foo(a,b,c); INSERT INTO FOO VALUES(1,2,3); INSERT INTO FOO SELECT * FROM FOO;";
 
 int main() {
-    sqlite3 *db = 0; // хэндл объекта соединение к БД
-    char *err = 0;
+    SqlLiteMessageKeeper a;
 
-// открываем соединение
-    if( sqlite3_open("my_cosy_database.dblite", &db) )
-        fprintf(stderr, "Ошибка открытия/создания БД: %s\n", sqlite3_errmsg(db));
-// выполняем SQL
-    else if (sqlite3_exec(db, SQL, 0, 0, &err))
-    {
-        fprintf(stderr, "Ошибка SQL: %sn", err);
-        sqlite3_free(err);
-    }
-// закрываем соединение
-    sqlite3_close(db);
+    const time_t t_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    Message msg("hi", "Vas", "Pet", t_c);
+    User us("Pet", "Pet", "da");
+    User us1("Vas", "Vas", "da");
+    a.AddNewUser(us);
+    a.AddNewUser(us1);
+    Message msg1("hidqwdqwd", "Vas", "Pet", t_c);
+    a.SendMessageToUserByLogin("Vas", "Pet", msg);
+    a.SendMessageToUserByLogin("Vas", "Pet", msg1);
+    a.SetReadMessage(msg);
+    a.SetUnreadMessage(msg);
+
+    vector<Message> msgs = a.GetAllMessageByLogin("Vas", "Pet");
+
+
+    std::cout<<msgs.back().getUuid()<<std::endl;
     return 0;
 }

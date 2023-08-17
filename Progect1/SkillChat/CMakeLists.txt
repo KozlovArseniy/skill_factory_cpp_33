@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(SkillChar)
+project(SkillChat)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -12,6 +12,7 @@ set(SOURCE
         Message/message.cpp
         Message/message_exceptions.cpp
         Exception/chat_exception.cpp
+        User/user.cpp
         )
 set(HEADERS
         MessageKeeper/message_keeper.h
@@ -21,10 +22,11 @@ set(HEADERS
         Message/message.h
         Message/message_exceptions.h
         Exception/chat_exception.h
+        User/user.h
         )
-add_executable(SkillChar main.cpp ${SOURCE} ${HEADERS})
+add_executable(SkillChat main.cpp ${SOURCE} ${HEADERS})
 
-target_link_libraries(SkillChar
+target_link_libraries(SkillChat
         SQLiteCpp
         sqlite3
         pthread
