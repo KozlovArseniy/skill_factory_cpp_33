@@ -14,7 +14,15 @@ public:
     ChatException(const ChatException& chat_exception);
     void AppendText( const string& error_text );
     const char * what() const noexcept override;
-    ~ChatException() {}
+private:
+    string _error_text;
+};
+
+
+class NotImplementedException: public std::exception{
+public:
+    NotImplementedException(const string& error_text): _error_text( string("NotImplementedException: ") + error_text){}
+    const char * what() const noexcept override;
 private:
     string _error_text;
 };

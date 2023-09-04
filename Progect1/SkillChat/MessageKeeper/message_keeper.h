@@ -11,10 +11,12 @@ using std::string, std::vector;
 
 class MessageKeeper {
 public:
-    virtual void AddNewUser(const User& user) = 0;
-    virtual void SendMessageToUserByLogin( string current_login, string other_login, const Message &msg ) = 0;
-    virtual vector<Message> GetAllMessageByLogin( string current_login, string other_login ) = 0; /// переписка с конкретным человеком
-    virtual vector<Message> ReadAllUnreadMessage( string current_login, string other_login ) = 0; /// непрочитанные сообщения от всех людей
-    virtual void SetUnreadMessage( const Message &msg ) = 0;
-    virtual void SetReadMessage( const Message &msg ) = 0;
+    virtual void AddNewUser(const User& user);
+    virtual User LoginUser(const string& login, const string& password);
+    virtual void SendMessageToUserByLogin( const string &current_login, const string &other_login, const Message &msg );
+    virtual vector<Message> GetAllMessageByLogin( const string &current_login, const string &other_login ); /// переписка с конкретным человеком
+    virtual vector<Message> ReadAllUnreadMessage( const string &current_login ); /// непрочитанные сообщения от всех людей
+    virtual void SetUnreadMessage( const Message &msg );
+    virtual void SetReadMessage( const Message &msg );
+    virtual ~MessageKeeper();
 };

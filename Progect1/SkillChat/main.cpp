@@ -1,29 +1,19 @@
 #include <iostream>
-#include <chrono>
-#include "sqlite3.h"
-
-#include "sqlite3.h"
+#include <memory>
 #include "MessageKeeper/SqlLite/sql_lite_message_keeper.h"
+
+#include "Ui/ui.h"
+
+#ifdef CONSOLE_UI
+    #include "Ui/ConsoleUi/console_ui.h"
+#endif
 
 
 int main() {
-    SqlLiteMessageKeeper a;
-
-    const time_t t_c = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    Message msg("hi", "Vas", "Pet", t_c);
-    User us("Pet", "Pet", "da");
-    User us1("Vas", "Vas", "da");
-    a.AddNewUser(us);
-    a.AddNewUser(us1);
-    Message msg1("hidqwdqwd", "Vas", "Pet", t_c);
-    a.SendMessageToUserByLogin("Vas", "Pet", msg);
-    a.SendMessageToUserByLogin("Vas", "Pet", msg1);
-    a.SetReadMessage(msg);
-    a.SetUnreadMessage(msg);
-
-    vector<Message> msgs = a.GetAllMessageByLogin("Vas", "Pet");
-
-
-    std::cout<<msgs.back().getUuid()<<std::endl;
+    std::unique_ptr<Ui> ui;
+#ifdef CONSOLE_UI
+    ui = std::make_unique<ConsoleUi>();
+#endif
+    ui->MainLoop();
     return 0;
 }

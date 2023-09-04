@@ -9,25 +9,31 @@ using std::string;
 
 class Message {
 public:
-    Message(const std::string& text, const std::string& sender, const std::string& recipient, time_t time);
+    Message(const std::string& text, const std::string& sender, const std::string& receiver, time_t time);
 
-    Message(const std::string& text, const std::string& sender, const std::string& recipient, time_t time, const std::string& uuid );
+    Message(const std::string& text, const std::string& sender, const std::string& receiver);
 
-    void setText(const std::string& text);
+    Message(const std::string& text, const std::string& sender, const std::string& receiver, time_t time, const std::string& uuid );
 
-    const std::string& getText() const;
+    friend std::ostream &operator<<(std::ostream &output, const Message &msg );
 
-    const std::string& getSender() const;
+    void SetText(const std::string& text);
 
-    const std::string& getRecipient() const;
+    const std::string& GetText() const;
 
-    const std::string& getUuid() const;
+    const std::string& GetSender() const;
 
-    time_t getSendinDatetime() const;
+    const std::string& GetRecipient() const;
+
+    const std::string& GetUuid() const;
+
+    time_t GetSendingDatetime() const;
 private:
-    std::string _UUID;
-    std::string _text;
-    std::string _sender;
-    std::string _recipient;
+    static string UuidGen();
+
+    string _UUID;
+    string _text;
+    string _sender;
+    string _recipient;
     time_t _sendinDatetime;
 };

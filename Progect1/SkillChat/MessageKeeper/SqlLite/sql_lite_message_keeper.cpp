@@ -10,6 +10,9 @@ using std::cout, std::endl;
 
 struct SqlResponseSearchUser{
     int user_id;
+    string login;
+    string name;
+    string password;
 };
 
 struct SqlResponseGetMessage{
@@ -17,6 +20,8 @@ struct SqlResponseGetMessage{
     int date_time_of_send;
     string uuid;
     bool read;
+    string sender;
+    string receiver;
 };
 
 int SqlLiteMessageKeeper::StringToInt(const string &str){
@@ -31,7 +36,12 @@ int SqlLiteMessageKeeper::StringToInt(const string &str){
 int SqlLiteMessageKeeper::CallBackSearchUser(void *user_args, int argc, char **argv, char **azColName){
     if (argc == 0)
         return 0;
-    static_cast<SqlResponseSearchUser*>(user_args)->user_id = StringToInt(string(argv[0]));
+    auto* user_struct = static_cast<SqlResponseSearchUser*>(user_args);
+    user_struct->user_id = StringToInt(string(argv[0]));
+    user_struct->name = string(argv[1]);
+    user_struct->login = string(argv[2]);
+    user_struct->password = string(argv[3]);
+
     return 0;
 }
 
@@ -39,13 +49,17 @@ int SqlLiteMessageKeeper::CallBackGetMessages(void *user_args, int argc, char **
     if (argc == 0)
         return 0;
 
-    static_cast<vector<SqlResponseGetMessage>*>(user_args)->push_back(SqlResponseGetMessage{string(argv[0]),
-                                                                                            StringToInt(
-                                                                                                    string(argv[1])),
-                                                                                            string(argv[2]),
-                                                                                            static_cast<bool>(StringToInt(
-                                                                                                    string(argv[3])))
-    });
+    SqlResponseGetMessage tmp = {string(argv[0]),
+                                 StringToInt(
+                                         string(argv[1])),
+                                 string(argv[2]),
+                                 static_cast<bool>(StringToInt(
+                                         string(argv[3]))),
+                                 string(argv[4])
+    };
+    if(argc == 6) /// Если дергаем для получения переписки с отдельным человеком
+        tmp.receiver = string(argv[5]);
+    static_cast<vector<SqlResponseGetMessage>*>(user_args)->push_back(tmp);
     return 0;
 }
 
@@ -61,22 +75,22 @@ SqlLiteMessageKeeper::~SqlLiteMessageKeeper(){
 
 void SqlLiteMessageKeeper::ChangeReadState(const Message &msg, bool read){
     string value_to_insert = string((read)? "1" : "0");
-    string sql_request ("UPDATE \"Message\" SET \"Read\" = " + value_to_insert +" WHERE \"Uuid\" = '" + msg.getUuid() + "';");
-    this->RunSqlRequest( sql_request, SqliteUnexpectedError(""));
+    string sql_request ("UPDATE \"Message\" SET \"Read\" = " + value_to_insert + " WHERE \"Uuid\" = '" + msg.GetUuid() + "';");
+    this->RunSqlRequest( sql_request, UnexpectedError(""));
 }
 
 int SqlLiteMessageKeeper::GetUserId(const string &login){
-    string sql_request ("SELECT \"@User\" FROM \"User\" WHERE \"Login\" = '"+ login +"' ");
+    string sql_request ("SELECT * FROM \"User\" WHERE \"Login\" = '"+ login +"' ");
 
     SqlResponseSearchUser user_sender{0};
-    this->RunSqlRequest( sql_request, SqliteUnexpectedError(""), SqlLiteMessageKeeper::CallBackSearchUser, &user_sender);
+    this->RunSqlRequest( sql_request, UnexpectedError(""), SqlLiteMessageKeeper::CallBackSearchUser, &user_sender);
     return user_sender.user_id;
 }
 
 void SqlLiteMessageKeeper::Open() {
     if (sqlite3_open((SqlLiteMessageKeeper::_default_name + string (".dblite")).c_str(), &this->_data_base_connection) != SQLITE_OK) {
         string error_text (sqlite3_errmsg(this->_data_base_connection));
-        throw SqliteCannotOpenDataBaseException(error_text);
+        throw CannotOpenMessageKeeperException(error_text);
     }
 }
 
@@ -108,37 +122,40 @@ void SqlLiteMessageKeeper::CreateStructure(){
                                          /// данные в string, чтобы корректно освободить память error_text
         sqlite3_free(error_text);
         sqlite3_close(this->_data_base_connection);
-        throw SqliteCannotCreateStructureException(error_str);
+        throw CannotCreateStructureException(error_str);
     }
 }
 
-void SqlLiteMessageKeeper::SendMessageToUserByLogin( string current_login, string other_login, const Message &msg){
+void SqlLiteMessageKeeper::SendMessageToUserByLogin( const string &current_login, const string &other_login, const Message &msg){
     int sender_id = this->GetUserId(current_login);
     int receiver_id = this->GetUserId(other_login);
     if( sender_id == 0 || receiver_id == 0) /// не найден один из участников беседы
-        throw SqliteUserNotFoundException(string("sender or receiver not found."));
+        throw UserNotFoundException(string("sender or receiver not found."));
     string str_sender = std::to_string(sender_id);
     string str_receiver = std::to_string(receiver_id);
 
     string sql_request ("INSERT INTO \"Message\""
                         "(\"Sender\", \"Receiver\", \"Body\", \"DateTimeOfSend\", \"Uuid\", \"Read\") "
-                        "VALUES ('" + str_sender+ "', '"+ str_receiver+
-                        "', '"+ msg.getText()+"', ""'"+ std::to_string(msg.getSendinDatetime())+"', '"+msg.getUuid()+"', '0');");
-    this->RunSqlRequest( sql_request, SqliteUnexpectedError(""));
+                        "VALUES ('" + str_sender + "', '" + str_receiver +
+                        "', '" + msg.GetText() + "', ""'" + std::to_string(msg.GetSendingDatetime()) + "', '" +
+                        msg.GetUuid() + "', '0');");
+    this->RunSqlRequest( sql_request, UnexpectedError(""));
 }
 
 
-vector<Message> SqlLiteMessageKeeper::GetAllMessageByLogin( string current_login, string other_login ){
+vector<Message> SqlLiteMessageKeeper::GetAllMessageByLogin( const string &current_login, const string &other_login ){
     vector<Message> result;
     int sender_id = SqlLiteMessageKeeper::GetUserId(current_login);
     int receiver_id = SqlLiteMessageKeeper::GetUserId(other_login);
     string str_sender = std::to_string(sender_id);
     string str_receiver = std::to_string(receiver_id);
-    string sql_request( "SELECT \"Body\", \"DateTimeOfSend\", \"Uuid\", \"Read\" FROM \"Message\" WHERE"
-                       " \"Sender\" = " + str_sender + " AND \"Receiver\" = " + str_receiver + ";");
+    string sql_request( "SELECT \"Body\", \"DateTimeOfSend\", \"Uuid\", \"Read\", sender.\"Login\" Sender, receiver.\"Login\" Receiver FROM \"Message\" "
+                        "LEFT JOIN \"User\" sender ON \"Sender\" = sender.\"@User\" LEFT JOIN \"User\" receiver ON \"Receiver\" = receiver.\"@User\"  "
+                        "WHERE (\"Sender\" = " + str_sender + " AND \"Receiver\" = " + str_receiver + " ) or "
+                         "(\"Sender\" = " + str_receiver + " AND \"Receiver\" = " + str_sender + " ) ORDER BY \"DateTimeOfSend\"; " );
 
     vector<SqlResponseGetMessage> sql_result;
-    this->RunSqlRequest( sql_request, SqliteUnexpectedError(""), SqlLiteMessageKeeper::CallBackGetMessages, &sql_result);
+    this->RunSqlRequest( sql_request, UnexpectedError(""), SqlLiteMessageKeeper::CallBackGetMessages, &sql_result);
     result.reserve(sql_result.size());
     for(const SqlResponseGetMessage& it: sql_result)
         result.emplace_back(it.body, current_login, other_login, it.date_time_of_send, it.uuid);
@@ -147,19 +164,19 @@ vector<Message> SqlLiteMessageKeeper::GetAllMessageByLogin( string current_login
 }
 
 
-vector<Message> SqlLiteMessageKeeper::ReadAllUnreadMessage( string current_login, string other_login ){
+vector<Message> SqlLiteMessageKeeper::ReadAllUnreadMessage( const string &current_login ){
     vector<Message> result;
-    int receiver_id = SqlLiteMessageKeeper::GetUserId(other_login);
+    int receiver_id = SqlLiteMessageKeeper::GetUserId(current_login);
     string str_receiver = std::to_string(receiver_id);
-    string sql_request( "SELECT \"Body\", \"DateTimeOfSend\", \"Uuid\", \"Read\" FROM \"Message\" WHERE"
-                        " \"Read\" = 0 AND \"Receiver\" = " + str_receiver + ";");
+    string sql_request( "SELECT \"Body\", \"DateTimeOfSend\", \"Uuid\", \"Read\", \"Login\" FROM \"Message\" "
+                        "LEFT JOIN \"User\" ON \"Sender\" = \"@User\" WHERE \"Read\" = 0 AND \"Receiver\" = " + str_receiver + ";");
 
     vector<SqlResponseGetMessage> sql_result;
-    this->RunSqlRequest( sql_request, SqliteUnexpectedError(""), SqlLiteMessageKeeper::CallBackGetMessages, &sql_result);
+    this->RunSqlRequest( sql_request, UnexpectedError(""), SqlLiteMessageKeeper::CallBackGetMessages, &sql_result);
 
     result.reserve(sql_result.size());
     for(const SqlResponseGetMessage& it: sql_result) {
-        result.emplace_back(it.body, current_login, other_login, it.date_time_of_send, it.uuid);
+        result.emplace_back(it.body, it.sender, current_login, it.date_time_of_send, it.uuid);
         this->SetReadMessage(result.back());
     }
 
@@ -177,10 +194,22 @@ void SqlLiteMessageKeeper::SetReadMessage( const Message &msg ){
 void SqlLiteMessageKeeper::AddNewUser(const User &user) {
     string sql_request ("INSERT INTO \"User\"(\"Login\", \"Name\", \"Password\") "
                         "VALUES ('" + user.GetLogin()+ "', '"+ user.GetName()+"', '"+user.GetPassword()+"');");
-    this->RunSqlRequest( sql_request, SqliteCannotCreateNewUserException(""));
+    this->RunSqlRequest( sql_request, CannotCreateNewUserException(""));
 }
 
-void SqlLiteMessageKeeper::RunSqlRequest( const string& request, SqlLiteException exception, int (*callback)(void*,int,char**,char**), void* user_args ){
+User SqlLiteMessageKeeper::LoginUser(const string& login, const string& password) {
+    string sql_request ("SELECT * FROM \"User\" WHERE \"Login\" = '"+ login +"' AND \"Password\" = '" + password +"' ");
+
+    SqlResponseSearchUser user_sender{0};
+    user_sender.user_id = -1; /// Невозможный user id
+    this->RunSqlRequest( sql_request, UnexpectedError(""), SqlLiteMessageKeeper::CallBackSearchUser, &user_sender);
+    if( user_sender.user_id == -1 )
+        throw UserNotFoundException("Not found user.");
+    return {user_sender.name, user_sender.login, user_sender.password, true};
+}
+
+template<typename T>
+void SqlLiteMessageKeeper::RunSqlRequest( const string& request, T exception, int (*callback)(void*,int,char**,char**), void* user_args ){
     char* error_text;
     if (sqlite3_exec(this->_data_base_connection, request.c_str(), callback, user_args, &error_text) != SQLITE_OK){
         string error_str(error_text); /// в sqlite3_exec динамическое выделение памяти, копируем

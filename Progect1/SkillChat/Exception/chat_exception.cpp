@@ -15,3 +15,8 @@ ChatException::ChatException(const ChatException& chat_exception){
 void ChatException::AppendText( const string& error_text ){
     this->_error_text += " " + error_text;
 }
+
+
+const char * NotImplementedException::what()const noexcept {
+    return this->_error_text.c_str();
+}
