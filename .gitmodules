@@ -1,3 +1,0 @@
-[submodule "SQLiteCpp"]
-	path = Progect1/SkillChat/MessageKeeper/SqlLite
-	url = git@github.com:SRombauts/SQLiteCpp.git
