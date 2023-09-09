@@ -1,3 +1,7 @@
+git clone git@github.com:KozlovArseniy/skill_factory_cpp_33.git
+git submodule init
+git submodule update
+
 в папку Progect1/SkillChat/MessageKeeper/SqlLite/SQLiteCpp нужно скачать репозиторий git@github.com:SRombauts/SQLiteCpp.git
 
 1) Козлов Арсений
