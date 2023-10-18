@@ -43,7 +43,7 @@ const std::string& Message::GetUuid()const{ return _UUID; }
 
 string Message::UuidGen() {
     srand(time(NULL));
-    char abc[]{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
+    string abc{'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
     string ans;
     int min = 100, max = 5000; /// пределы случайного илса для енерации UUID
     int num = min + rand() % (max - min + 1);

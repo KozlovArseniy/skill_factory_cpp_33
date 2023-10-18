@@ -12,9 +12,7 @@ add_compile_definitions(CONSOLE_UI) # Задаем вид пользовател
 set(SOURCE
         MessageKeeper/message_keeper.cpp
         MessageKeeper/SqlLite/sql_lite_message_keeper.cpp
-        MessageKeeper/MessageKeeperException/message_keeper_exception.cpp
         Message/message.cpp
-        Message/message_exceptions.cpp
         Exception/chat_exception.cpp
         User/user.cpp
         Ui/ui.cpp
@@ -24,7 +22,6 @@ set(HEADERS
         MessageKeeper/MessageKeeperException/message_keeper_exception.h
         MessageKeeper/SqlLite/sql_lite_message_keeper.h
         Message/message.h
-        Message/message_exceptions.h
         Exception/chat_exception.h
         User/user.h
         Ui/ui.h
