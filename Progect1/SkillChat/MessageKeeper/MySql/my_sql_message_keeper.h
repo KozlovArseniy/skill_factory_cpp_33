@@ -1,0 +1,8 @@
+//
+// Created by arseniy on 27.12.23.
+//
+
+#ifndef SKILLCHAT_MY_SQL_MESSAGE_KEEPER_H
+#define SKILLCHAT_MY_SQL_MESSAGE_KEEPER_H
+
+#endif //SKILLCHAT_MY_SQL_MESSAGE_KEEPER_H
