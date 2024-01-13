@@ -25,7 +25,9 @@ set(HEADERS
         Exception/chat_exception.h
         User/user.h
         Ui/ui.h
-        Ui/ConsoleUi/console_ui.h)
+        Ui/ConsoleUi/console_ui.h
+        Logger/logger.h
+        Logger/logger.cpp)
 add_executable(SkillChat main.cpp ${SOURCE} ${HEADERS})
 
 target_link_libraries(SkillChat

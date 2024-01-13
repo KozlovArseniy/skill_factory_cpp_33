@@ -3,7 +3,7 @@
 //
 
 #include "message.h"
-#include <stdlib.h>
+#include <ctime>
 
 Message::Message(const std::string& text, const std::string& sender, const std::string& receiver, time_t time) : _text(text), _sender(sender), _recipient(receiver), _sendinDatetime(time) {
     this->_UUID = Message::UuidGen();

@@ -4,6 +4,7 @@
 #include <iostream>
 #include "console_ui.h"
 #include "../../MessageKeeper/MessageKeeperException/message_keeper_exception.h"
+#include "../../Logger/logger.h"
 
 using std::cout, std::cin, std::cerr, std::endl;
 
@@ -50,31 +51,38 @@ void ConsoleUi::MainLoop(){
                 break;
             }
             case UserCommands_Login:{
+                Logger::Instance().WriteLog( "Пользователь решил залогиниться", InfoMsg );
                 this->LoginWindow();
                 break;
             }
             case UserCommands_Register:{
+                Logger::Instance().WriteLog( "Пользователь решил зарегистрироваться", InfoMsg );
                 this->RegisterWindow();
                 break;
             }
             case UserCommands_Logout:{
+                Logger::Instance().WriteLog( "Пользователь решил разлогиниться", InfoMsg );
                 this->_current_user.SetLoggedIn(false);
                 cout<<"Вы вышли из SkillChat\n"<<endl;
                 break;
             }
             case UserCommands_ReadUnread:{
+                Logger::Instance().WriteLog( "Пользователь решил прочитать непрочитанные письма", InfoMsg );
                 this->ReadUnReadWindow();
                 break;
             }
             case UserCommands_Write:{
+                Logger::Instance().WriteLog( "Пользователь решил написать сообщение", InfoMsg );
                 this->WriteLetterWindow();
                 break;
             }
             case UserCommands_ReadCorrespondence:{
+                Logger::Instance().WriteLog( "Пользователь решил прочитать всю переписку", InfoMsg );
                 this->GetCorrespondenceWindow();
                 break;
             }
             default:{
+                Logger::Instance().WriteLog( "Пользователь ввел некорректную команду", WarningMsg );
                 cout<<"Вы ввели неожиданную команду, выберите корректную команду из списка.\n\n"<<endl;
                 break;
             }
@@ -94,13 +102,16 @@ void ConsoleUi::LoginWindow(){
         this->_current_user = std::move(this->_message_keeper->LoginUser(login, password));
     }
     catch (const UserNotFoundException &e){
+        Logger::Instance().WriteLog( "Неверный логин или пароль", WarningMsg );
         cerr<<"\nОшибка или в логине или в пароле.\n"<<endl;
         return;
     }
     catch (const UnexpectedError &e){
+        Logger::Instance().WriteLog( "Произошла неизвестая ошибка при входе", ErrorMsg );
         cerr<<"\nПроизошла неизвестая ошибка при входе.\n"<<endl;
         return;
     }
+    Logger::Instance().WriteLog( "Пользователь залогинился", InfoMsg );
     cout<<"Вы успешно вошли в SkillChat \n" <<endl;
 }
 
@@ -118,11 +129,13 @@ void ConsoleUi::RegisterWindow() {
         this->_message_keeper->AddNewUser(new_user);
     }
     catch (const CannotCreateNewUserException &e){
+        Logger::Instance().WriteLog( "Неуникальный логин/пароль", WarningMsg );
         cerr<<"\nПользователь с таким логином уже существует, введите другой логин.\n"<<endl;
         return;
     }
     new_user.SetLoggedIn(true);
     this->_current_user = std::move(new_user);
+    Logger::Instance().WriteLog( "Пользователь зарегистрировался", InfoMsg );
     cout<<"Поздравляем, Вы зарегистрировались в SkillChat \n" <<endl;
 }
 
@@ -138,13 +151,17 @@ void ConsoleUi::WriteLetterWindow(){
         this->_message_keeper->SendMessageToUserByLogin(this->_current_user.GetLogin(), login, msg);
     } catch (const UserNotFoundException& e)
     {
+        Logger::Instance().WriteLog( "Адресат не найден, письмо не удалось отправить", WarningMsg );
         cerr<<"Адресат не найден, письмо не удалось отправить"<<endl;
         return;
     } catch (const UnexpectedError& e)
     {
+        Logger::Instance().WriteLog( "Во время отправки произошла непредвиденная ошибка", ErrorMsg );
         cerr<<"Во время отправки произошла непредвиденная ошибка"<<endl;
         return;
     }
+    Logger::Instance().WriteLog( "send " + message + " to " + login , InfoMsg );
+    Logger::Instance().WriteLog( "Сообщение успешно отправлено", InfoMsg );
     cout<<"Сообщение успешно отправлено"<<endl;
 }
 
@@ -154,8 +171,10 @@ void ConsoleUi::ReadUnReadWindow() {
        msgs = this->_message_keeper->ReadAllUnreadMessage(this->_current_user.GetLogin());
     }
     catch( const UnexpectedError& e) {
+        Logger::Instance().WriteLog( "Произошла неожиднная ошибка при получении непрочитанных сообщений", ErrorMsg );
         cerr<<"Произошла неожиднная ошибка при получении непрочитанных сообщений"<<endl;
     }
+    Logger::Instance().WriteLog( "Сообщения успешно были прочитаны", InfoMsg );
     for( const auto& el: msgs)
         cout<<el<<endl;
 }
@@ -169,8 +188,10 @@ void ConsoleUi::GetCorrespondenceWindow() {
         msgs = this->_message_keeper->GetAllMessageByLogin(this->_current_user.GetLogin(), other_login);
     }
     catch( const UnexpectedError& e) {
+        Logger::Instance().WriteLog( "Произошла неожиднная ошибка при получении непрочитанных сообщений", ErrorMsg );
         cerr<<"Произошла неожиднная ошибка при получении непрочитанных сообщений"<<endl;
     }
+    Logger::Instance().WriteLog( "Сообщения успешно были прочитаны", InfoMsg );
     for( const auto& el: msgs)
         cout<<el<<endl;
 }
