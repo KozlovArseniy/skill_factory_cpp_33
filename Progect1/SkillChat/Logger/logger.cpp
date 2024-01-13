@@ -6,9 +6,9 @@
 #include "../Exception/chat_exception.h"
 
 Logger::~Logger() {
-    this->_logger_mutex.lock();
+    std::cout<<"Destroy logger"<<std::endl;
+    std::lock_guard<mutex> destroy_lock(this->_logger_mutex );
     _main_logger_stream.close();
-    this->_logger_mutex.unlock();
 }
 
 Logger& Logger::Instance(){
@@ -45,13 +45,12 @@ void Logger::WriteLog( const string &log_msg, LogLevel log_level ){
 }
 
 void Logger::WriteStrToFile( const string& log_msg ){
-    this->_logger_mutex.lock();
+    std::lock_guard<mutex> write_lock(this->_logger_mutex );
     this->_main_logger_stream<<log_msg<<std::endl;
-    this->_logger_mutex.unlock();
 }
 
 void Logger::InitLogStream(){
-    std::cout<<"Init log"<<std::endl;
+    std::cout<<"Init logger"<<std::endl;
     this->_main_logger_stream.open(this->log_file_name, std::ios::app| std::ios::out );
     if( !this->_main_logger_stream.is_open() )
         throw ChatException("Не удалось открыть файл для лога");
