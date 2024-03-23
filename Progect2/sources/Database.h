@@ -13,6 +13,7 @@ struct SqlResponseSearchUser{
     string name;
     string password;
     bool ban;
+    bool excluded;
 };
 
 struct SqlResponseGetMessage{
@@ -50,6 +51,7 @@ public:
     void addChatMessage(const string & sender, const string & text);
     bool addPrivateMessage(const string & sender, const string & target, const string & message);
     void setBanUserByLogin(const string & login, const bool & ban);
+    void deleteUserByLogin(const string & login);
     vector<string> getChatMessages();//показать все сообщения
     vector<Message> getPrivateMessage(const int userID = -1);//показать личные сообщения пользователю username
 };

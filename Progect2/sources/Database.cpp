@@ -50,7 +50,9 @@ int Database::CallBackGetUsers(void *user_args, int argc, char **argv, char **az
                                   string(argv[2]),
                                   string(argv[3]),
                                   static_cast<bool>(StringToInt(
-                                         string(argv[4])))
+                                         string(argv[4]))),
+                                  static_cast<bool>(StringToInt(
+                                        string(argv[5])))
     };
 
     static_cast<vector<SqlResponseSearchUser>*>(user_args)->push_back(tmp);
@@ -68,7 +70,8 @@ vector<std::pair<std::string, bool>> Database::getUserList() const
     vector<std::pair<std::string, bool>> userList;
     for(auto user : users)
     {
-        userList.push_back(std::make_pair(user.login, user.ban));
+        if( !user.excluded)
+            userList.push_back(std::make_pair(user.login, user.ban));
     }
     return userList;
 }
@@ -120,6 +123,7 @@ void Database::CreateStructure(){
                                "\t\"Login\"\tTEXT NOT NULL UNIQUE,\n"
                                "\t\"Password\"\tTEXT NOT NULL,\n"
                                "\t\"Ban\"\tINTEGER NOT NULL,\n"
+                               "\t\"Excluded\"\tINTEGER NOT NULL,\n"
                                "\tPRIMARY KEY(\"@User\" AUTOINCREMENT)\n"
                                ");";
 
@@ -165,8 +169,8 @@ int Database::addUser(const string & username, const string & password)
 
     if( searchUserByName(username) > 0) return -2;
 
-    string sql_request ("INSERT INTO \"User\"(\"Login\", \"Name\", \"Password\", \"Ban\") "
-                            "VALUES ('" +username+ "', '"+ username+"', '"+password+"', '"+std::to_string(0)+"');");
+    string sql_request ("INSERT INTO \"User\"(\"Login\", \"Name\", \"Password\", \"Ban\", \"Excluded\" ) "
+                            "VALUES ('" +username+ "', '"+ username+"', '"+password+"', '"+std::to_string(0)+"', '"+std::to_string(0)+"');");
     this->RunSqlRequest( sql_request, std::exception());
 
     return searchUserByName(username);
@@ -180,7 +184,7 @@ int Database::checkPassword(const string & username, const string & password)
     this->RunSqlRequest( sql_request, std::exception(), Database::CallBackGetUsers, &users);
     for(auto user : users)
     {
-        if( !user.ban )
+        if( !user.ban && !user.excluded )
             return user.user_id;
     }
     return -1;
@@ -220,6 +224,12 @@ void Database::setBanUserByLogin(const string & login, const bool & ban)
 {
     string value_to_insert = string((ban)? "1" : "0");
     string sql_request ("UPDATE \"User\" SET \"Ban\" = " + value_to_insert + " WHERE \"Login\" = '" + login + "';");
+    this->RunSqlRequest( sql_request, std::exception());
+}
+
+void Database::deleteUserByLogin(const string & login)
+{
+    string sql_request ("UPDATE \"User\" SET \"Excluded\" = 1 WHERE \"Login\" = '" + login + "';");
     this->RunSqlRequest( sql_request, std::exception());
 }
 

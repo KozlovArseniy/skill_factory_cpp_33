@@ -96,7 +96,7 @@ void MainWindow::on_privateMessageSendButton_clicked()
   }
 }
 
-void MainWindow::on_actionBan_user_triggered()
+void MainWindow::on_actionBan_client_triggered()
 {
   QDialog dial(this);
   dial.setModal(true);
@@ -129,6 +129,40 @@ void MainWindow::on_actionBan_user_triggered()
     std::string login = item.substr(0, start_del);
     bool new_val_ban = std::string(item.substr(start_del+delimer.size())) == "banned" ? false: true;
     m_dbPtr->setBanUserByLogin(login, new_val_ban );
+  }
+}
+
+void MainWindow::on_actionDelete_client_triggered()
+{
+  QDialog dial(this);
+  dial.setModal(true);
+  auto l = new QVBoxLayout();
+  dial.setLayout(l);
+  auto userListWgt = new QListWidget(&dial);
+  l->addWidget(userListWgt);
+  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dial);
+  l->addWidget(buttonBox);
+
+  connect(buttonBox, &QDialogButtonBox::accepted, &dial, &QDialog::accept);
+  connect(buttonBox, &QDialogButtonBox::rejected, &dial, &QDialog::reject);
+
+  auto userList = m_dbPtr->getUserList();
+  std::string delimer = "/  ";
+  for(auto user : userList)
+  {
+    userListWgt->addItem(QString::fromStdString(user.first+ delimer + (user.second? "banned": "no banned")));
+  }
+
+  userListWgt->setCurrentRow(0);
+
+  auto result = dial.exec();
+
+  if(result == QDialog::Accepted &&
+     userListWgt->currentItem())
+  {
+    std::string item = userListWgt->currentItem()->text().toStdString();
+    size_t start_del = item.find("/");
+    m_dbPtr->deleteUserByLogin(item.substr(0, start_del));
   }
 }
 

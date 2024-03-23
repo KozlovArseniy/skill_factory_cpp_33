@@ -71,7 +71,15 @@
         <translation>шепчет вам</translation>
     </message>
     <message>
-        <source>Ban user</source>
+        <source>Ban/Delete client</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ban client</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Delete client</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

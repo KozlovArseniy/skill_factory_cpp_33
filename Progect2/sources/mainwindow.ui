@@ -67,11 +67,19 @@
     <property name="title">
      <string>Main menu</string>
     </property>
+    <widget class="QMenu" name="menuBan_Delete_client">
+     <property name="title">
+      <string>Ban/Delete client</string>
+     </property>
+     <addaction name="actionBan_client"/>
+     <addaction name="actionDelete_client"/>
+    </widget>
     <addaction name="actionOpen_another_cliend"/>
     <addaction name="separator"/>
-    <addaction name="actionBan_user"/>
+    <addaction name="menuBan_Delete_client"/>
     <addaction name="separator"/>
     <addaction name="actionCloseClient"/>
+    <addaction name="separator"/>
    </widget>
    <addaction name="menuMain_menu"/>
   </widget>
@@ -86,9 +94,14 @@
     <string>Close this client</string>
    </property>
   </action>
-  <action name="actionBan_user">
+  <action name="actionBan_client">
    <property name="text">
-    <string>Ban user</string>
+    <string>Ban client</string>
+   </property>
+  </action>
+  <action name="actionDelete_client">
+   <property name="text">
+    <string>Delete client</string>
    </property>
   </action>
  </widget>
