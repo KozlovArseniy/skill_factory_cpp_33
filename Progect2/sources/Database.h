@@ -12,6 +12,7 @@ struct SqlResponseSearchUser{
     string login;
     string name;
     string password;
+    bool ban;
 };
 
 struct SqlResponseGetMessage{
@@ -40,14 +41,15 @@ class Database
 
 public:
 
-    vector<string> getUserList() const;
+    vector<std::pair<std::string, bool>> getUserList() const;
     string getUserName(int userId) const;
     Database();
     ~Database();
-    int addUser(string username, string password);
-    int checkPassword(string username, string password);
-    void addChatMessage(string sender, string text);
-    bool addPrivateMessage(string sender, string target, string message);
+    int addUser(const string &username, const string &password);
+    int checkPassword(const string & username, const string & password);
+    void addChatMessage(const string & sender, const string & text);
+    bool addPrivateMessage(const string & sender, const string & target, const string & message);
+    void setBanUserByLogin(const string & login, const bool & ban);
     vector<string> getChatMessages();//показать все сообщения
-    vector<Message> getPrivateMessage(int userID = -1);//показать личные сообщения пользователю username
+    vector<Message> getPrivateMessage(const int userID = -1);//показать личные сообщения пользователю username
 };

@@ -70,6 +70,10 @@
         <source>say to you</source>
         <translation>шепчет вам</translation>
     </message>
+    <message>
+        <source>Ban user</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RegistrationForm</name>

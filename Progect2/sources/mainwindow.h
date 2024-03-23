@@ -29,6 +29,7 @@ private slots:
   void on_privateMessageSendButton_clicked();
   void on_actionOpen_another_cliend_triggered();
   void on_actionCloseClient_triggered();
+  void on_actionBan_user_triggered();
   void updateChats();
 
 private:

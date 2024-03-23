@@ -69,6 +69,8 @@
     </property>
     <addaction name="actionOpen_another_cliend"/>
     <addaction name="separator"/>
+    <addaction name="actionBan_user"/>
+    <addaction name="separator"/>
     <addaction name="actionCloseClient"/>
    </widget>
    <addaction name="menuMain_menu"/>

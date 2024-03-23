@@ -1,8 +1,8 @@
 ﻿#include "Database.h"
 #include "Parsing.h"
 #include <memory>
-#include <iostream>>
-
+#include <iostream>
+#include<utility>
 
 template<typename T>
 void Database::RunSqlRequest( const string& request, T exception, int (*callback)(void*,int,char**,char**), void* user_args ) const{
@@ -11,7 +11,6 @@ void Database::RunSqlRequest( const string& request, T exception, int (*callback
         string error_str(error_text); /// в sqlite3_exec динамическое выделение памяти, копируем
         /// данные в string, чтобы корректно освободить память error_text
         sqlite3_free(error_text);
-        std::cout<<"basd_sql = " + request<<std::endl;
         exit(1);
     }
 }
@@ -27,7 +26,6 @@ int Database::StringToInt(const string &str){
 }
 
 int Database::CallBackGetMessages(void *user_args, int argc, char **argv, char **azColName){
-    std::cout<<"call back argc = " + to_string(argc)<<std::endl;
     if (argc == 0)
         return 0;
     SqlResponseGetMessage tmp = {string(argv[0]),
@@ -50,7 +48,9 @@ int Database::CallBackGetUsers(void *user_args, int argc, char **argv, char **az
     SqlResponseSearchUser tmp = {StringToInt(string(argv[0])),
                                   string(argv[1]),
                                   string(argv[2]),
-                                 string(argv[3])
+                                  string(argv[3]),
+                                  static_cast<bool>(StringToInt(
+                                         string(argv[4])))
     };
 
     static_cast<vector<SqlResponseSearchUser>*>(user_args)->push_back(tmp);
@@ -58,17 +58,17 @@ int Database::CallBackGetUsers(void *user_args, int argc, char **argv, char **az
 }
 
 
-vector<string> Database::getUserList() const
+vector<std::pair<std::string, bool>> Database::getUserList() const
 {
     string sql_request ("SELECT * FROM \"User\" ");
 
     vector<SqlResponseSearchUser> users;
     this->RunSqlRequest( sql_request, std::exception(), Database::CallBackGetUsers, &users);
 
-    vector<string> userList;
+    vector<std::pair<std::string, bool>> userList;
     for(auto user : users)
     {
-        userList.push_back(user.login);
+        userList.push_back(std::make_pair(user.login, user.ban));
     }
     return userList;
 }
@@ -119,6 +119,7 @@ void Database::CreateStructure(){
                                "\t\"Name\"\tTEXT NOT NULL,\n"
                                "\t\"Login\"\tTEXT NOT NULL UNIQUE,\n"
                                "\t\"Password\"\tTEXT NOT NULL,\n"
+                               "\t\"Ban\"\tINTEGER NOT NULL,\n"
                                "\tPRIMARY KEY(\"@User\" AUTOINCREMENT)\n"
                                ");";
 
@@ -158,20 +159,20 @@ Database::~Database()
     sqlite3_close(this->_data_base_connection);
 }
 
-int Database::addUser(string username, string password)
+int Database::addUser(const string & username, const string & password)
 {
     if (!correctName(username)) return -1;
 
     if( searchUserByName(username) > 0) return -2;
 
-    string sql_request ("INSERT INTO \"User\"(\"Login\", \"Name\", \"Password\") "
-                            "VALUES ('" +username+ "', '"+ username+"', '"+password+"');");
+    string sql_request ("INSERT INTO \"User\"(\"Login\", \"Name\", \"Password\", \"Ban\") "
+                            "VALUES ('" +username+ "', '"+ username+"', '"+password+"', '"+std::to_string(0)+"');");
     this->RunSqlRequest( sql_request, std::exception());
 
     return searchUserByName(username);
 }
 
-int Database::checkPassword(string username, string password)
+int Database::checkPassword(const string & username, const string & password)
 {
     string sql_request ("SELECT * FROM \"User\" WHERE \"Login\" = '"+ username +"' AND \"Password\" = '" + password +"' ");
 
@@ -179,12 +180,13 @@ int Database::checkPassword(string username, string password)
     this->RunSqlRequest( sql_request, std::exception(), Database::CallBackGetUsers, &users);
     for(auto user : users)
     {
-        return user.user_id;
+        if( !user.ban )
+            return user.user_id;
     }
     return -1;
 }
 
-void Database::addChatMessage(string sender, string text)
+void Database::addChatMessage(const string & sender, const string & text)
 {
     string str_sender = std::to_string(this->searchUserByName(sender));
     time_t now;
@@ -196,7 +198,7 @@ void Database::addChatMessage(string sender, string text)
     this->RunSqlRequest( sql_request, std::exception());
 }
 
-bool Database::addPrivateMessage(string sender, string target, string message)
+bool Database::addPrivateMessage(const string & sender, const string & target, const string & message)
 {
     string str_sender = std::to_string(this->searchUserByName(sender));
     int receiver_id = this->searchUserByName(target);
@@ -212,6 +214,13 @@ bool Database::addPrivateMessage(string sender, string target, string message)
                         "', '" + message + "', ""'" + std::to_string(now) + "', 'random uuid', '0');");
     this->RunSqlRequest( sql_request, std::exception());
     return true;
+}
+
+void Database::setBanUserByLogin(const string & login, const bool & ban)
+{
+    string value_to_insert = string((ban)? "1" : "0");
+    string sql_request ("UPDATE \"User\" SET \"Ban\" = " + value_to_insert + " WHERE \"Login\" = '" + login + "';");
+    this->RunSqlRequest( sql_request, std::exception());
 }
 
 vector<string> Database::getChatMessages()
@@ -230,7 +239,7 @@ vector<string> Database::getChatMessages()
     return result;
 }
 
-vector<Message> Database::getPrivateMessage(int userID)
+vector<Message> Database::getPrivateMessage(const int userID)
 {
     vector<Message> result;
     string str_receiver = std::to_string(userID);
